@@ -57,6 +57,7 @@ public class ApiController {
         paymentMethodsRequest.setMerchantAccount(this.applicationProperty.getMerchantAccount());
         paymentMethodsRequest.setChannel(PaymentMethodsRequest.ChannelEnum.WEB);
 
+        log.info("Retrieving available Payment Methods from Adyen {}", paymentMethodsRequest);
         var response = paymentsApi.paymentMethods(paymentMethodsRequest);
         return ResponseEntity.ok()
                 .body(response);
@@ -78,7 +79,7 @@ public class ApiController {
 
         var orderRef = UUID.randomUUID().toString();
         paymentRequest.setReference(orderRef);
-        paymentRequest.setReturnUrl(request.getScheme() + "://" + host + "/api/handleShopperRedirect?orderRef=" + orderRef); // Turns into http://localhost:8080/api/...
+        paymentRequest.setReturnUrl(request.getScheme() + "://" + host + "/api/handleShopperRedirect?orderRef=" + orderRef); // Turns into http://localhost:8080/api/handleShopperRedirect?orderRef=...
 
         // Step 5
         // 3DS2
@@ -116,12 +117,14 @@ public class ApiController {
         var requestOptions = new RequestOptions();
         requestOptions.setIdempotencyKey(UUID.randomUUID().toString());
 
+        log.info("PaymentsRequest {}", paymentRequest);
         var response = paymentsApi.payments(paymentRequest, requestOptions);
         return ResponseEntity.ok().body(response);
     }
 
     @PostMapping("/api/payments/details")
-    public ResponseEntity<PaymentDetailsResponse> payments(@RequestBody PaymentDetailsRequest detailsRequest) throws IOException, ApiException {
+    public ResponseEntity<PaymentDetailsResponse> paymentsDetails(@RequestBody PaymentDetailsRequest detailsRequest) throws IOException, ApiException {
+        log.info("PaymentDetailsRequest {}", detailsRequest);
         var response = paymentsApi.paymentsDetails(detailsRequest);
         return ResponseEntity.ok()
                 .body(response);
@@ -137,6 +140,9 @@ public class ApiController {
 
         // Handle redirect result or payload
         if (redirectResult != null && !redirectResult.isEmpty()) {
+            // For redirect, you are redirected to an Adyen domain to complete the 3DS2 challenge
+            // After completing the 3DS2 challenge, you get the redirect result from Adyen in the returnUrl
+            // We then pass on the redirectResult
             paymentCompletionDetails.redirectResult(redirectResult);
         } else if (payload != null && !payload.isEmpty()) {
             paymentCompletionDetails.payload(payload);
@@ -144,16 +150,17 @@ public class ApiController {
 
         paymentDetailsRequest.setDetails(paymentCompletionDetails);
 
-        var paymentDetailsResponse = paymentsApi.paymentsDetails(paymentDetailsRequest);
+        var paymentsDetailsResponse = paymentsApi.paymentsDetails(paymentDetailsRequest);
+        log.info("PaymentsDetailsResponse {}", paymentsDetailsResponse);
 
         // Handle response
-        return getRedirectView(paymentDetailsResponse);
+        return getRedirectView(paymentsDetailsResponse);
     }
 
-    private RedirectView getRedirectView(final PaymentDetailsResponse paymentDetailsResponse) throws ApiException, IOException {
+    private RedirectView getRedirectView(final PaymentDetailsResponse paymentsDetailsResponse) throws ApiException, IOException {
         // Step 7
         var redirectURL = "/result/";
-        switch (paymentDetailsResponse.getResultCode()) {
+        switch (paymentsDetailsResponse.getResultCode()) {
             case AUTHORISED:
                 redirectURL += "success";
                 break;
@@ -168,6 +175,6 @@ public class ApiController {
                 redirectURL += "error";
                 break;
         }
-        return new RedirectView(redirectURL + "?reason=" + paymentDetailsResponse.getResultCode());
+        return new RedirectView(redirectURL + "?reason=" + paymentsDetailsResponse.getResultCode());
     }
 }
