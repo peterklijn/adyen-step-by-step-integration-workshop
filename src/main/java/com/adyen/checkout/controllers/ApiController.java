@@ -1,0 +1,173 @@
+package com.adyen.checkout.controllers;
+
+import com.adyen.Client;
+import com.adyen.checkout.ApplicationProperty;
+import com.adyen.checkout.models.CartItemModel;
+import com.adyen.checkout.services.CartService;
+import com.adyen.enums.Environment;
+import com.adyen.model.checkout.Amount;
+import com.adyen.model.RequestOptions;
+import com.adyen.model.checkout.*;
+import com.adyen.service.checkout.PaymentsApi;
+import com.adyen.service.exception.ApiException;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.UUID;
+
+/**
+ * REST controller for using the Adyen payments API.
+ */
+@RestController
+public class ApiController {
+    private final Logger log = LoggerFactory.getLogger(ApiController.class);
+
+    private final ApplicationProperty applicationProperty;
+
+    private final PaymentsApi paymentsApi;
+
+    @Autowired
+    private CartService cartService;
+
+    @Autowired
+    public ApiController(ApplicationProperty applicationProperty) {
+
+        this.applicationProperty = applicationProperty;
+
+        if (applicationProperty.getApiKey() == null) {
+            log.warn("ADYEN_API_KEY is UNDEFINED");
+            throw new RuntimeException("ADYEN_API_KEY is UNDEFINED");
+        }
+
+        var client = new Client(applicationProperty.getApiKey(), Environment.TEST);
+        this.paymentsApi = new PaymentsApi(client);
+    }
+
+    @PostMapping("/api/paymentMethods")
+    public ResponseEntity<PaymentMethodsResponse> paymentMethods() throws IOException, ApiException {
+        // Step 2
+        var paymentMethodsRequest = new PaymentMethodsRequest();
+        paymentMethodsRequest.setMerchantAccount(this.applicationProperty.getMerchantAccount());
+        paymentMethodsRequest.setChannel(PaymentMethodsRequest.ChannelEnum.WEB);
+
+        var response = paymentsApi.paymentMethods(paymentMethodsRequest);
+        return ResponseEntity.ok()
+                .body(response);
+    }
+
+    @PostMapping("/api/payments")
+    public ResponseEntity<PaymentResponse> payments(@RequestHeader String host, @RequestBody PaymentRequest body, HttpServletRequest request) throws IOException, ApiException {
+        // Step 4
+        var paymentRequest = new PaymentRequest();
+
+        // Amount
+        var amount = new Amount()
+                .currency("EUR")
+                .value(cartService.getTotalAmount());
+        paymentRequest.setAmount(amount);
+
+        paymentRequest.setMerchantAccount(this.applicationProperty.getMerchantAccount());
+        paymentRequest.setChannel(PaymentRequest.ChannelEnum.WEB);
+
+        var orderRef = UUID.randomUUID().toString();
+        paymentRequest.setReference(orderRef);
+        paymentRequest.setReturnUrl(request.getScheme() + "://" + host + "/api/handleShopperRedirect?orderRef=" + orderRef); // Turns into http://localhost:8080/api/...
+
+        // Step 5
+        // 3DS2
+        var authenticationData = new AuthenticationData();
+        authenticationData.setAttemptAuthentication(AuthenticationData.AttemptAuthenticationEnum.ALWAYS);
+        paymentRequest.setAuthenticationData(authenticationData);
+
+        paymentRequest.setOrigin(request.getScheme() + "://" + host); // Turns into http://localhost:8080
+        paymentRequest.setBrowserInfo(body.getBrowserInfo());
+        paymentRequest.setShopperIP(request.getRemoteAddr());
+        paymentRequest.setPaymentMethod(body.getPaymentMethod());
+
+        var billingAddress = new BillingAddress();
+        billingAddress.setCity("Amsterdam");
+        billingAddress.setCountry("NL");
+        billingAddress.setPostalCode("1012KK");
+        billingAddress.setStreet("Rokin");
+        billingAddress.setHouseNumberOrName("49");
+        paymentRequest.setBillingAddress(billingAddress);
+
+        // Klarna step
+        var items = cartService.getShoppingCart().getCartItems();
+        var lineItems = new ArrayList<LineItem>();
+        for (CartItemModel item : items) {
+            lineItems.add(new LineItem()
+                    .quantity(1L)
+                    .amountIncludingTax(item.getAmount())
+                    .description(item.getName()));
+        }
+        paymentRequest.setLineItems(lineItems);
+        paymentRequest.setCountryCode("NL");
+        paymentRequest.setShopperEmail("S.hopper@adyen.com");
+
+        // Idempotency
+        var requestOptions = new RequestOptions();
+        requestOptions.setIdempotencyKey(UUID.randomUUID().toString());
+
+        var response = paymentsApi.payments(paymentRequest, requestOptions);
+        return ResponseEntity.ok().body(response);
+    }
+
+    @PostMapping("/api/payments/details")
+    public ResponseEntity<PaymentDetailsResponse> payments(@RequestBody PaymentDetailsRequest detailsRequest) throws IOException, ApiException {
+        var response = paymentsApi.paymentsDetails(detailsRequest);
+        return ResponseEntity.ok()
+                .body(response);
+    }
+
+    // Handle redirect during payment.
+    @GetMapping("/api/handleShopperRedirect")
+    public RedirectView redirect(@RequestParam(required = false) String payload, @RequestParam(required = false) String redirectResult) throws IOException, ApiException {
+        // Step 6
+        var paymentDetailsRequest = new PaymentDetailsRequest();
+
+        PaymentCompletionDetails paymentCompletionDetails = new PaymentCompletionDetails();
+
+        // Handle redirect result or payload
+        if (redirectResult != null && !redirectResult.isEmpty()) {
+            paymentCompletionDetails.redirectResult(redirectResult);
+        } else if (payload != null && !payload.isEmpty()) {
+            paymentCompletionDetails.payload(payload);
+        }
+
+        paymentDetailsRequest.setDetails(paymentCompletionDetails);
+
+        var paymentDetailsResponse = paymentsApi.paymentsDetails(paymentDetailsRequest);
+
+        // Handle response
+        return getRedirectView(paymentDetailsResponse);
+    }
+
+    private RedirectView getRedirectView(final PaymentDetailsResponse paymentDetailsResponse) throws ApiException, IOException {
+        // Step 7
+        var redirectURL = "/result/";
+        switch (paymentDetailsResponse.getResultCode()) {
+            case AUTHORISED:
+                redirectURL += "success";
+                break;
+            case PENDING:
+            case RECEIVED:
+                redirectURL += "pending";
+                break;
+            case REFUSED:
+                redirectURL += "failed";
+                break;
+            default:
+                redirectURL += "error";
+                break;
+        }
+        return new RedirectView(redirectURL + "?reason=" + paymentDetailsResponse.getResultCode());
+    }
+}
