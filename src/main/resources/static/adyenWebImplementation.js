@@ -1,11 +1,11 @@
 const clientKey = document.getElementById("clientKey").innerHTML;
-const totalAmount = document.getElementById("totalAmount").innerHTML;
 const type = document.getElementById("type").innerHTML;
 
 // Starts the (Adyen.Web) AdyenCheckout with your specified configuration by calling the `/paymentMethods` endpoint.
 async function startCheckout() {
     try {
-        const paymentMethodsResponse = await sendPostRequest("/api/paymentMethods");
+        let paymentMethodsResponse = await sendPostRequest("/api/paymentMethods");
+
         const configuration = {
             paymentMethodsResponse: paymentMethodsResponse,
             clientKey,
@@ -13,7 +13,7 @@ async function startCheckout() {
             environment: "test",
             showPayButton: true,
             paymentMethodsConfiguration: {
-                ideal: {
+                ideal: { // TODO Remove
                     showImage: true,
                 },
                 card: {
@@ -21,7 +21,7 @@ async function startCheckout() {
                     holderNameRequired: true,
                     name: "Credit or debit card",
                     amount: {
-                        value: totalAmount,
+                        value: 9998,
                         currency: "EUR",
                     },
                 }
@@ -39,7 +39,7 @@ async function startCheckout() {
         };
 
         // Start the AdyenCheckout and mount the element onto the `payment`-div.
-        const adyenCheckout = await new AdyenCheckout(configuration);
+        let adyenCheckout = await new AdyenCheckout(configuration);
         adyenCheckout.create(type).mount(document.getElementById("payment"));
     } catch (error) {
         console.error(error);

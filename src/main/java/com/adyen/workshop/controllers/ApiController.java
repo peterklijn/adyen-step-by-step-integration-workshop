@@ -1,19 +1,13 @@
-package com.adyen.checkout.controllers;
+package com.adyen.workshop.controllers;
 
-import com.adyen.Client;
-import com.adyen.checkout.ApplicationProperty;
-import com.adyen.checkout.models.CartItemModel;
-import com.adyen.checkout.services.CartService;
-import com.adyen.enums.Environment;
-import com.adyen.model.checkout.Amount;
 import com.adyen.model.RequestOptions;
 import com.adyen.model.checkout.*;
+import com.adyen.workshop.configurations.ApplicationConfiguration;
 import com.adyen.service.checkout.PaymentsApi;
 import com.adyen.service.exception.ApiException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
@@ -29,32 +23,25 @@ import java.util.UUID;
 public class ApiController {
     private final Logger log = LoggerFactory.getLogger(ApiController.class);
 
-    private final ApplicationProperty applicationProperty;
-
+    private final ApplicationConfiguration applicationProperties;
     private final PaymentsApi paymentsApi;
 
-    @Autowired
-    private CartService cartService;
+    public ApiController(ApplicationConfiguration applicationProperties, PaymentsApi paymentsApi) {
+        this.applicationProperties = applicationProperties;
+        this.paymentsApi = paymentsApi;
+    }
 
-    @Autowired
-    public ApiController(ApplicationProperty applicationProperty) {
-
-        this.applicationProperty = applicationProperty;
-
-        if (applicationProperty.getApiKey() == null) {
-            log.warn("ADYEN_API_KEY is UNDEFINED");
-            throw new RuntimeException("ADYEN_API_KEY is UNDEFINED");
-        }
-
-        var client = new Client(applicationProperty.getApiKey(), Environment.TEST);
-        this.paymentsApi = new PaymentsApi(client);
+    @GetMapping("/hello-world")
+    public ResponseEntity<String> helloWorld() throws Exception {
+        return ResponseEntity.ok()
+                .body("This is the 'Hello World' from the workshop - You've successfully finished step 0!");
     }
 
     @PostMapping("/api/paymentMethods")
     public ResponseEntity<PaymentMethodsResponse> paymentMethods() throws IOException, ApiException {
-        // Step 2
         var paymentMethodsRequest = new PaymentMethodsRequest();
-        paymentMethodsRequest.setMerchantAccount(this.applicationProperty.getMerchantAccount());
+
+        paymentMethodsRequest.setMerchantAccount(applicationProperties.getAdyenMerchantAccount());
         paymentMethodsRequest.setChannel(PaymentMethodsRequest.ChannelEnum.WEB);
 
         log.info("Retrieving available Payment Methods from Adyen {}", paymentMethodsRequest);
@@ -65,23 +52,20 @@ public class ApiController {
 
     @PostMapping("/api/payments")
     public ResponseEntity<PaymentResponse> payments(@RequestHeader String host, @RequestBody PaymentRequest body, HttpServletRequest request) throws IOException, ApiException {
-        // Step 4
         var paymentRequest = new PaymentRequest();
 
-        // Amount
         var amount = new Amount()
                 .currency("EUR")
-                .value(cartService.getTotalAmount());
+                .value(9998L);
         paymentRequest.setAmount(amount);
 
-        paymentRequest.setMerchantAccount(this.applicationProperty.getMerchantAccount());
+        paymentRequest.setMerchantAccount(applicationProperties.getAdyenMerchantAccount());
         paymentRequest.setChannel(PaymentRequest.ChannelEnum.WEB);
 
         var orderRef = UUID.randomUUID().toString();
         paymentRequest.setReference(orderRef);
         paymentRequest.setReturnUrl(request.getScheme() + "://" + host + "/api/handleShopperRedirect?orderRef=" + orderRef); // Turns into http://localhost:8080/api/handleShopperRedirect?orderRef=...
 
-        // Step 5
         // 3DS2
         var authenticationData = new AuthenticationData();
         authenticationData.setAttemptAuthentication(AuthenticationData.AttemptAuthenticationEnum.ALWAYS);
@@ -101,14 +85,16 @@ public class ApiController {
         paymentRequest.setBillingAddress(billingAddress);
 
         // Klarna step
-        var items = cartService.getShoppingCart().getCartItems();
         var lineItems = new ArrayList<LineItem>();
-        for (CartItemModel item : items) {
-            lineItems.add(new LineItem()
-                    .quantity(1L)
-                    .amountIncludingTax(item.getAmount())
-                    .description(item.getName()));
-        }
+        lineItems.add(new LineItem()
+            .quantity(1L)
+            .amountIncludingTax(4999L)
+            .description("headphones"));
+        lineItems.add(new LineItem()
+            .quantity(1L)
+            .amountIncludingTax(4999L)
+            .description("sunglasses"));
+
         paymentRequest.setLineItems(lineItems);
         paymentRequest.setCountryCode("NL");
         paymentRequest.setShopperEmail("S.hopper@adyen.com");
@@ -133,7 +119,6 @@ public class ApiController {
     // Handle redirect during payment.
     @GetMapping("/api/handleShopperRedirect")
     public RedirectView redirect(@RequestParam(required = false) String payload, @RequestParam(required = false) String redirectResult) throws IOException, ApiException {
-        // Step 6
         var paymentDetailsRequest = new PaymentDetailsRequest();
 
         PaymentCompletionDetails paymentCompletionDetails = new PaymentCompletionDetails();
