@@ -4,7 +4,7 @@ tasks:
       gradle wrapper
     command: |
       echo "Building..."
-      ./gradlew build
+      ./gradlew bootJar
       echo "Starting application on port 8080..."
       ./gradlew bootRun
 
