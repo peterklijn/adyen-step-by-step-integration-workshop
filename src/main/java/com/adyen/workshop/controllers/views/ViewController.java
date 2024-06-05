@@ -1,4 +1,4 @@
-package com.adyen.workshop.views;
+package com.adyen.workshop.controllers.views;
 
 import com.adyen.workshop.configurations.ApplicationConfiguration;
 import org.slf4j.Logger;
@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class ViewController {
     private final Logger log = LoggerFactory.getLogger(ViewController.class);
 
-    private final ApplicationConfiguration applicationProperties;
+    private final ApplicationConfiguration applicationConfiguration;
 
-    public ViewController(ApplicationConfiguration applicationProperties) {
-        this.applicationProperties = applicationProperties;
+    public ViewController(ApplicationConfiguration applicationConfiguration) {
+        this.applicationConfiguration = applicationConfiguration;
     }
 
     @GetMapping("/")
@@ -34,7 +34,7 @@ public class ViewController {
     @GetMapping("/checkout")
     public String checkout(@RequestParam String type, Model model) {
         model.addAttribute("type", type);
-        model.addAttribute("clientKey", this.applicationProperties.getAdyenClientKey());
+        model.addAttribute("clientKey", this.applicationConfiguration.getAdyenClientKey());
         return "checkout";
     }
 
@@ -46,7 +46,7 @@ public class ViewController {
 
     @GetMapping("/redirect")
     public String redirect(Model model) {
-        model.addAttribute("clientKey", this.applicationProperties.getAdyenClientKey());
+        model.addAttribute("clientKey", this.applicationConfiguration.getAdyenClientKey());
         return "redirect";
     }
 }

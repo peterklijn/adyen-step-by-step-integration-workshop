@@ -9,10 +9,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class MainApplication {
-    private final ApplicationConfiguration applicationProperties;
+    private final ApplicationConfiguration applicationConfiguration;
 
-    public MainApplication(ApplicationConfiguration applicationProperties) {
-        this.applicationProperties = applicationProperties;
+    public MainApplication(ApplicationConfiguration applicationConfiguration) {
+        this.applicationConfiguration = applicationConfiguration;
     }
 
     private static final Logger log = LoggerFactory.getLogger(MainApplication.class);
@@ -24,7 +24,7 @@ public class MainApplication {
     @PostConstruct
     public void init() {
         log.info("\n----------------------------------------------------------\n\t" +
-                "Application is running on http://localhost:" + applicationProperties.getServerPort() +
+                "Application is running on http://localhost:" + applicationConfiguration.getServerPort() +
                 "\n----------------------------------------------------------");
     }
 }

@@ -23,11 +23,11 @@ import java.util.UUID;
 public class ApiController {
     private final Logger log = LoggerFactory.getLogger(ApiController.class);
 
-    private final ApplicationConfiguration applicationProperties;
+    private final ApplicationConfiguration applicationConfiguration;
     private final PaymentsApi paymentsApi;
 
-    public ApiController(ApplicationConfiguration applicationProperties, PaymentsApi paymentsApi) {
-        this.applicationProperties = applicationProperties;
+    public ApiController(ApplicationConfiguration applicationConfiguration, PaymentsApi paymentsApi) {
+        this.applicationConfiguration = applicationConfiguration;
         this.paymentsApi = paymentsApi;
     }
 
@@ -41,7 +41,7 @@ public class ApiController {
     public ResponseEntity<PaymentMethodsResponse> paymentMethods() throws IOException, ApiException {
         var paymentMethodsRequest = new PaymentMethodsRequest();
 
-        paymentMethodsRequest.setMerchantAccount(applicationProperties.getAdyenMerchantAccount());
+        paymentMethodsRequest.setMerchantAccount(applicationConfiguration.getAdyenMerchantAccount());
         paymentMethodsRequest.setChannel(PaymentMethodsRequest.ChannelEnum.WEB);
 
         log.info("Retrieving available Payment Methods from Adyen {}", paymentMethodsRequest);
@@ -59,7 +59,7 @@ public class ApiController {
                 .value(9998L);
         paymentRequest.setAmount(amount);
 
-        paymentRequest.setMerchantAccount(applicationProperties.getAdyenMerchantAccount());
+        paymentRequest.setMerchantAccount(applicationConfiguration.getAdyenMerchantAccount());
         paymentRequest.setChannel(PaymentRequest.ChannelEnum.WEB);
 
         var orderRef = UUID.randomUUID().toString();

@@ -47,7 +47,7 @@ async function startCheckout() {
     }
 }
 
-// Handles responses sent from your server to the client
+// Handles responses sent from your server to the client.
 function handleResponse(response, component) {
     // If there's an action, handle it, otherwise redirect the user to the correct page based on the resultCode.
     if (response.action) {
@@ -69,6 +69,20 @@ function handleResponse(response, component) {
                 break;
         }
     }
+}
+
+// This function sends a POST request to your specified URL,
+// the `data`-parameters will be serialized as JSON in the body parameters.
+async function sendPostRequest(url, data) {
+    const res = await fetch(url, {
+        method: "POST",
+        body: data ? JSON.stringify(data) : "",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+
+    return await res.json();
 }
 
 startCheckout();
