@@ -1,12 +1,11 @@
 tasks:
   - name: Install, Build & Run
     before: |
-      # Install JDK
-      echo "Installing JDK ..."
-      sdk install java 17.0.4.1-tem < /dev/null
-      ./gradlew bootJar
+      gradle wrapper
     command: |
-      echo "Starting application..."
+      echo "Building..."
+      ./gradlew build
+      echo "Starting application on port 8080..."
       ./gradlew bootRun
 
 ports:
