@@ -2,13 +2,15 @@
 
 ### Prerequisites
 
-_Note: For this workshop, we're asking you to start from a clean merchant account._
+_Note: For this workshop, we're asking you to start with a clean Adyen Merchant Account._
 
 You will need a few things to get started:
 
 * an IDE (like IntelliJ or VsCode)
 * Java SDK v17+ - You can use any but the project was tested with Java 17.
 * Access to an [Adyen Test Account](https://www.adyen.com/signup).
+
+Alternatively, if you do not want to run this locally, you can spin-up this repository in a VM such as [Gitpod](https://gitpod.io/#https://github.com/adyen-examples/adyen-step-by-step-integration-workshop).
 
 ## Introduction
 
