@@ -72,9 +72,9 @@ In this workshop, you'll learn how to:
 ### Start - Step-by-Step Guide:
 
 0. Build the project and run it to see if it works. If you can visit `http://localhost:8080/hello-world`, this means it works! You won't be able to make a payment yet though and the application will throw an error if you try to proceed.
-     * `./gradlew build` will build the project.
-     * `./gradlew bootRun` will start the server on port 8080.
-     * To run the project from your IDE (e.g. IntelliJ), go to `src/main/java/com/adyen/workshop/OnlinePaymentsApplication.java` -> Right-click and click `Debug` or `Run`.
+     * `./gradlew bootJar` will build the project.
+     * `./gradlew bootRun` will start the application on port 8080.
+     * To run the project from your IDE (e.g. IntelliJ), go to `src/main/java/com/adyen/workshop/MainApplication.java` -> Right-click and click `Debug` or `Run`.
 
 1. Install the [Java library](https://github.com/Adyen/adyen-java-api-library) by adding the following line to the `build.gradle` file, build the project to pull-in the Adyen Java API Library.
 
