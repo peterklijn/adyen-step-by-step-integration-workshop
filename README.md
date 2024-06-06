@@ -43,7 +43,7 @@ The project structure follows a Model-View-Controller (MVC) structure.
   * The `clientKey` in `adyenWebImplementation.js` is automatically passed from the backend to the client side and can be accessed using: `clientKey`.
   * In order to play around with multiple payment methods, a `type` value is passed from the client to the server, which contains the name of an adyen payment method and that the adyen web components will recognize.
 * To run the project
-  * `./gradlew build` will build the project (you can use this to test the code compiles).
+  * `./gradlew bootJar` will build the project.
   * `./gradlew bootRun` will start the server on port 8080.
   * To run the project from your IDE (e.g. IntelliJ), go to `src/main/java/com/adyen/workshop/MainApplication.java` -> Right-click and click `Debug` or `Run`.
 
