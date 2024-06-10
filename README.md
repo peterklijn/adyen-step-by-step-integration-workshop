@@ -87,9 +87,9 @@ In this workshop, you'll learn how to:
 4. Add your keys to `ApplicationConfiguration.java` in `/main/java/com/adyen/workshop/configurations`:
    - Best practice: export the vars as follows so that the Spring.Boot framework can inject your variables on startup.
 ```
-ADYEN_API_KEY=Aq....xx
-ADYEN_CLIENT_KEY=
-ADYEN_MERCHANT_ACCOUNT=Your
+ADYEN_API_KEY=Aq42....xx
+ADYEN_CLIENT_KEY=test_yourclientkey
+ADYEN_MERCHANT_ACCOUNT=YourMerchantAccountName
 ```
    You can now access your keys using `applicationConfiguration.getAdyenApiKey()`, `applicationConfiguration.getAdyenClientKey()` and `applicationConfiguration.getAdyenMerchantAccount()` respectively.
 
@@ -104,6 +104,46 @@ For your convenience, we've already included this in the project.
 
 6. Install the latest [Adyen.Web Dropin/Components](https://docs.adyen.com/online-payments/release-notes/) by adding embed script(`.js`) and stylesheet(`.css`) to `/resources/templates/layout.html`.
   - Including this allows you to access the AdyenCheckout instance in JavaScript. In this example, we use `Web Components/Drop-in v5.63.0`.
+
+
+**Additional context:**
+In `/com/adyen/workshop/configurations/`, you'll find a `DependencyInjectionConfiguration`. This is where we create our Adyen instances and **re-use** them using Spring's Constructor Dependency Injection (CDI) - A `@Bean` is an object that is instantiated, assembled, and managed by a Spring IoC container.
+For your convenience, we've added these, you just have to instantiate the `com.Adyen.Client` (using your `ADYEN_API_KEY` & environment: `TEST`), and `com.adyen.service.checkout.PaymentsApi` once.
+
+
+<details>
+<summary>Show me how</summary>
+
+```java
+
+@Configuration
+public class DependencyInjectionConfiguration {
+    private final ApplicationConfiguration applicationConfiguration;
+
+    public DependencyInjectionConfiguration(ApplicationConfiguration applicationConfiguration) {
+        this.applicationConfiguration = applicationConfiguration;
+    }
+
+    @Bean
+    Client client() {
+        var config = new Config();
+        config.setApiKey(applicationConfiguration.getAdyenApiKey());
+        config.setEnvironment(Environment.TEST);
+        return new Client(config);
+    }
+
+    @Bean
+    PaymentsApi paymentsApi(){
+        return new PaymentsApi(client());
+    }
+
+    @Bean
+    HMACValidator hmacValidator() { return new HMACValidator(); }
+}
+
+```
+
+</details>
 
 7. Let's prepare our backend (`com/adyen/workshop/controllers`) to [retrieve a list of available payment methods](https://docs.adyen.com/online-payments/build-your-integration/advanced-flow/?platform=Web&integration=Drop-in&version=5.63.0&programming_language=java#web-advanced-flow-post-payment-methods-request). Go to `ApiController.java` and use the `paymentsApi` to make `/paymentMethods`-request to Adyen.
 ```java
@@ -121,11 +161,15 @@ For your convenience, we've already included this in the project.
     }
 ```
 
-8. On your frontend (`adyenWebImplementation.js`), let's call this newly created endpoint and display the payment methods to the shopper.
+8. On your frontend (`adyenWebImplementation.js`), let's call this new endpoint and display the payment methods to the shopper.
+We automatically pass on your public `ADYEN_CLIENT_KEY` to your frontend, you can access this variable using `clientKey`.
+
+
 ```js
 // Starts the (Adyen.Web) AdyenCheckout with your specified configuration by calling the `/paymentMethods` endpoint.
 async function startCheckout() {
     try {
+        // Step 8 - Retrieve payment methods and instantiate it
         let paymentMethodsResponse = await sendPostRequest("/api/paymentMethods");
 
         const configuration = {
