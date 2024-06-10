@@ -92,13 +92,16 @@ ADYEN_CLIENT_KEY=test_yourclientkey
 ADYEN_MERCHANT_ACCOUNT=YourMerchantAccountName
 ```
 
-You can now access your keys using `applicationConfiguration.getAdyenApiKey()`, `applicationConfiguration.getAdyenClientKey()` and `applicationConfiguration.getAdyenMerchantAccount()` respectively.
+You can now access your keys in your application anywhere:
+- `applicationConfiguration.getAdyenApiKey()`
+- `applicationConfiguration.getAdyenClientKey()`
+- `applicationConfiguration.getAdyenMerchantAccount()`.
 
 **Additional context:**
-In `/com/adyen/workshop/configurations/`, you'll find a `DependencyInjectionConfiguration`. This is where we create our Adyen instances and **re-use** them using Spring's Constructor Dependency Injection (CDI) - A `@Bean` is an object that is instantiated, assembled, and managed by a Spring IoC container.
-For your convenience, we've added these, you just have to instantiate the `com.Adyen.Client` (using your `ADYEN_API_KEY` & environment: `TEST`), and `com.adyen.service.checkout.PaymentsApi` once.
 
-**Exercise:** Create your Adyen-`Client` (takes care of the HTTP(s) communication), which we'll use later on.
+In `/com/adyen/workshop/configurations/`, you'll find a `DependencyInjectionConfiguration`. This is where we create our Adyen instances and **re-use** them using Spring's Constructor Dependency Injection (CDI) - A `@Bean` is an object that is instantiated, assembled, and managed by a Spring IoC container.
+
+**Exercise:** Create your Adyen-`Client` by creating a `new Config()`-object, pass your `ADYEN_API_KEY` and specify `Environment.TEST`, which we'll use later on.
 We've created `PaymentsApi`-service (communicates with the Adyen endpoints) and `hmacValidator` instances already for you.
 
 <details>
@@ -136,7 +139,7 @@ public class DependencyInjectionConfiguration {
 </details>
 
 
-5. [Skip this step] Install the [Java library](https://github.com/Adyen/adyen-java-api-library) by adding the following line to the `build.gradle` file, build the project to pull-in the Adyen Java API Library.
+5. **Skip this step**: Install the [Java library](https://github.com/Adyen/adyen-java-api-library) by adding the following line to the `build.gradle` file, build the project to pull-in the Adyen Java API Library.
 For your convenience, we've already included this in the project.
 
 ```
