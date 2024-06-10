@@ -269,7 +269,7 @@ We start by defining a new endpoint `/api/payments` that our frontend will send 
     }
 ```
 
-</summary>
+</details>
 
 10. Best practices: Add the Idempotency key, see [documentation](https://docs.adyen.com/development-resources/api-idempotency/) to your payment request.
 ```java
