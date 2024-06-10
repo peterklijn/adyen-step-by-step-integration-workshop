@@ -435,7 +435,7 @@ public RedirectView redirect(@RequestParam(required = false) String payload, @Re
 
 </details>
 
-14. We'll have to update our frontend accordingly if there's an action to handle, go to `adyenWebImplementation.js` and modify the `handelResponse(...)`-function:
+14. We'll have to update our frontend accordingly if there's an action to handle, go to `adyenWebImplementation.js` and modify the `handleResponse(...)`-function:
 
 ```js
 // Handles responses sent from your server to the client.
