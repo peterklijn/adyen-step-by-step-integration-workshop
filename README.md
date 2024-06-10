@@ -151,13 +151,17 @@ For your convenience, we've already included this in the project.
 
 
 7. Let's prepare our backend (`com/adyen/workshop/controllers`) to [retrieve a list of available payment methods](https://docs.adyen.com/online-payments/build-your-integration/advanced-flow/?platform=Web&integration=Drop-in&version=5.63.0&programming_language=java#web-advanced-flow-post-payment-methods-request). Go to `ApiController.java` and use the `paymentsApi` to make `/paymentMethods`-request to Adyen.
+
+<details>
+<summary>Show me the answer</summary>
+
 ```java
     @PostMapping("/api/paymentMethods")
     public ResponseEntity<PaymentMethodsResponse> paymentMethods() throws IOException, ApiException {
         var paymentMethodsRequest = new PaymentMethodsRequest();
 
-        paymentMethodsRequest.setMerchantAccount(...);
-        paymentMethodsRequest.setChannel(...);
+        // Fill in the parameters below
+        //paymentMethodsRequest.set(...);
 
         log.info("Retrieving available Payment Methods from Adyen {}", paymentMethodsRequest);
         var response = paymentsApi.paymentMethods(paymentMethodsRequest);
@@ -166,8 +170,13 @@ For your convenience, we've already included this in the project.
     }
 ```
 
+</details>
+
 8. On your frontend (`adyenWebImplementation.js`), let's call this new endpoint and display the payment methods to the shopper.
 We automatically pass on your public `ADYEN_CLIENT_KEY` to your frontend, you can access this variable using `clientKey`.
+Create the configuration for the `AdyenCheckout`-instance, call the `/api/paymentMethods/`-endpoint, create the `AdyenCheckOut()`-instance and mount it to `"payment"-div` container.
+
+**Note:** We've added a `sendPostRequest(...)` function that can communicate with your backend.
 
 
 ```js
@@ -228,6 +237,10 @@ Run your application to see whether the Dropin is showing a list of payment meth
 
 9. Let's create the `/payments`-request ([see docs](https://docs.adyen.com/online-payments/build-your-integration/advanced-flow/?platform=Web&integration=Drop-in&version=5.63.0&programming_language=java#post-payments-request-web)) on the backend.
 We start by defining a new endpoint `/api/payments` that our frontend will send a request to.
+
+<details>
+<summary>Show me the answer</summary>
+
 ```java
 
     @PostMapping("/api/payments")
@@ -253,6 +266,8 @@ We start by defining a new endpoint `/api/payments` that our frontend will send 
     }
 ```
 
+</summary>
+
 10. Best practices: Add the Idempotency key, see [documentation](https://docs.adyen.com/development-resources/api-idempotency/) to your payment request.
 ```java
 var requestOptions = new RequestOptions();
@@ -277,7 +292,10 @@ return ResponseEntity.ok().body(response);
 
 12. Let's now send a request to our backend from our frontend, modify the `adyenWebImplementation.js` to override the `onSubmit(...)` function to call `/api/payments` and `onAdditionaDetails(...)` to call `/api/payments/details`.
 We've added a helper function `handleResponse(...)` to do a simple redirect.
-    
+
+<details>
+<summary>Show me the answer</summary>
+
 ```js
     async function startCheckout() {
         try {
@@ -346,6 +364,8 @@ We've added a helper function `handleResponse(...)` to do a simple redirect.
 
 ```
 
+</details>
+
 You should now be able to make a payment, **however** it will fail when a challenge is presented to the shopper. Let's handle this by adding 3D Secure 2 Authentication support.
 
 3D Secure 2 is an authentication protocol (3DS2) that provides an additional layer of verification for card-not-present (CNP) transactions.
@@ -361,6 +381,10 @@ Go back to the `ApiController`, we'll need to [add additional properties](https:
 
 
 13. Let's handle the 3DS2 in our `/payments/details`-request by simply passing the `redirectResult` or `payload` in the `/payments/details`-call.
+
+<details>
+<summary>Show me the answer</summary>
+
 ```java
 // Handle redirect during payment.
 @GetMapping("/api/handleShopperRedirect")
@@ -406,6 +430,7 @@ public RedirectView redirect(@RequestParam(required = false) String payload, @Re
 
 ```
 
+</details>
 
 14. We'll have to update our frontend accordingly if there's an action to handle, go to `adyenWebImplementation.js` and modify the `handelResponse(...)`-function:
 
@@ -473,7 +498,7 @@ switch (response.resultCode) {
    - Create a new `WebhookController.java` in `/java/com/adyen/workshop/controllers/WebhookController.java`
 
 <details>
-  <summary>Show code</summary>
+  <summary>Show me the answer</summary>
 
 ```java
 @PostMapping("/webhooks")
