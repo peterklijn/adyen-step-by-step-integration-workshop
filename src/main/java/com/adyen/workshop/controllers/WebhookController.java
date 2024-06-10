@@ -64,7 +64,7 @@ public class WebhookController {
                     item.getAdditionalData().get("alias"),
                     item.getPspReference());
 
-            return ResponseEntity.ok().body("[accepted]");
+            return ResponseEntity.accepted().build();
         } catch (SignatureException e) {
             // Handle invalid signature
             return ResponseEntity.unprocessableEntity().build();
@@ -72,32 +72,5 @@ public class WebhookController {
             // Handle all other errors
             return ResponseEntity.status(500).build();
         }
-    }
-
-    @PostMapping("/webhooks/giving")
-    public ResponseEntity<String> givingWebhooks(@RequestBody String json) throws IOException {
-        var notificationRequest = NotificationRequest.fromJson(json);
-        var notificationRequestItem = notificationRequest.getNotificationItems().stream().findFirst();
-
-        if (!notificationRequestItem.isPresent()) {
-            log.warn("Empty NotificationItem");
-            return ResponseEntity.badRequest().build();
-        }
-
-        NotificationRequestItem item = notificationRequestItem.get();
-
-        // Success, log it for now
-        log.info("""
-                        Received webhook with event {} :\s
-                        Merchant Account Code: {}
-                        PSP reference : {}
-                        Donation successful : {}
-                        """,
-                item.getEventCode(),
-                item.getMerchantAccountCode(),
-                item.getPspReference(),
-                item.isSuccess());
-
-        return ResponseEntity.ok().body("[accepted]");
     }
 }

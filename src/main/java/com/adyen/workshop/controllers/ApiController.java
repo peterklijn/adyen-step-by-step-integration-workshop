@@ -142,7 +142,7 @@ public class ApiController {
         return getRedirectView(paymentsDetailsResponse);
     }
 
-    private RedirectView getRedirectView(final PaymentDetailsResponse paymentsDetailsResponse) throws ApiException, IOException {
+    private RedirectView getRedirectView(final PaymentDetailsResponse paymentsDetailsResponse) {
         // Step 7
         var redirectURL = "/result/";
         switch (paymentsDetailsResponse.getResultCode()) {

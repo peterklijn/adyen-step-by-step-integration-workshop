@@ -13,9 +13,6 @@ async function startCheckout() {
             environment: "test",
             showPayButton: true,
             paymentMethodsConfiguration: {
-                ideal: { // TODO Remove
-                    showImage: true,
-                },
                 card: {
                     hasHolderName: true,
                     holderNameRequired: true,
