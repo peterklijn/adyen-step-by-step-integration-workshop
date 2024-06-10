@@ -245,28 +245,27 @@ We start by defining a new endpoint `/api/payments` that our frontend will send 
 <summary>Show me the answer</summary>
 
 ```java
+@PostMapping("/api/payments")
+public ResponseEntity<PaymentResponse> payments(@RequestHeader String host, @RequestBody PaymentRequest body, HttpServletRequest request) throws IOException, ApiException {
+    var paymentRequest = new PaymentRequest();
 
-    @PostMapping("/api/payments")
-    public ResponseEntity<PaymentResponse> payments(@RequestHeader String host, @RequestBody PaymentRequest body, HttpServletRequest request) throws IOException, ApiException {
-        var paymentRequest = new PaymentRequest();
+    var amount = new Amount()
+            .currency("EUR")
+            .value(9998L);
+    paymentRequest.setAmount(amount);
+    paymentRequest.setMerchantAccount(...);
+    paymentRequest.setChannel(...);
 
-        var amount = new Amount()
-                .currency("EUR")
-                .value(9998L);
-        paymentRequest.setAmount(amount);
-        paymentRequest.setMerchantAccount(...);
-        paymentRequest.setChannel(...);
-
-        var orderRef = UUID.randomUUID().toString();
-        paymentRequest.setReference(orderRef);
-        // Once done with the payment, where shall we redirect you?
-        paymentRequest.setReturnUrl(request.getScheme() + "://" + host + "/api/handleShopperRedirect?orderRef=" + orderRef); // Example: Turns into http://localhost:8080/api/handleShopperRedirect?orderRef=354fa90e-0858-4d2f-92b9-717cb8e18173
+    var orderRef = UUID.randomUUID().toString();
+    paymentRequest.setReference(orderRef);
+    // Once done with the payment, where shall we redirect you?
+    paymentRequest.setReturnUrl(request.getScheme() + "://" + host + "/api/handleShopperRedirect?orderRef=" + orderRef); // Example: Turns into http://localhost:8080/api/handleShopperRedirect?orderRef=354fa90e-0858-4d2f-92b9-717cb8e18173
 
 
-        log.info("PaymentsRequest {}", paymentRequest);
-        var response = paymentsApi.payments(paymentRequest);
-        return ResponseEntity.ok().body(response);
-    }
+    log.info("PaymentsRequest {}", paymentRequest);
+    var response = paymentsApi.payments(paymentRequest);
+    return ResponseEntity.ok().body(response);
+}
 ```
 
 </details>
@@ -283,13 +282,13 @@ return ResponseEntity.ok().body(response);
 
 11. Let's finalize the payment by calling the `/payments/details`-endpoint. We need to create another endpoint `/api/payments/details` - We take the details passed from the frontend and finalize the payment.
 ```java
- @PostMapping("/api/payments/details")
-    public ResponseEntity<PaymentDetailsResponse> paymentsDetails(@RequestBody PaymentDetailsRequest detailsRequest) throws IOException, ApiException {
-        log.info("PaymentDetailsRequest {}", detailsRequest);
-        var response = paymentsApi.paymentsDetails(detailsRequest);
-        return ResponseEntity.ok()
-                .body(response);
-    }
+@PostMapping("/api/payments/details")
+public ResponseEntity<PaymentDetailsResponse> paymentsDetails(@RequestBody PaymentDetailsRequest detailsRequest) throws IOException, ApiException {
+    log.info("PaymentDetailsRequest {}", detailsRequest);
+    var response = paymentsApi.paymentsDetails(detailsRequest);
+    return ResponseEntity.ok()
+            .body(response);
+}
 ```
 
 
@@ -300,71 +299,70 @@ We've added a helper function `handleResponse(...)` to do a simple redirect.
 <summary>Show me the answer</summary>
 
 ```js
-    async function startCheckout() {
-        try {
-            let paymentMethodsResponse = await sendPostRequest("/api/paymentMethods");
+async function startCheckout() {
+    try {
+        let paymentMethodsResponse = await sendPostRequest("/api/paymentMethods");
 
-            const configuration = {
-                paymentMethodsResponse: paymentMethodsResponse,
-                clientKey,
-                locale: "en_US",
-                environment: "test",
-                showPayButton: true,
-                paymentMethodsConfiguration: {
-                    card: {
-                        hasHolderName: true,
-                        holderNameRequired: true,
-                        name: "Credit or debit card",
-                        amount: {
-                            value: 9998,
-                            currency: "EUR",
-                        },
-                    }
-                },
-                // Step 12 onSubmit(...)
-                onSubmit: async (state, component) => {
-                    if (state.isValid) {
-                        const response = await sendPostRequest("/api/payments", state.data);
-                        handleResponse(response, component);
-                    }
-                },
-                // Step 12 onAdditionalDetails(...)
-                onAdditionalDetails: async (state, component) => {
-                    const response = await sendPostRequest("/api/payments/details", state.data);
+        const configuration = {
+            paymentMethodsResponse: paymentMethodsResponse,
+            clientKey,
+            locale: "en_US",
+            environment: "test",
+            showPayButton: true,
+            paymentMethodsConfiguration: {
+                card: {
+                    hasHolderName: true,
+                    holderNameRequired: true,
+                    name: "Credit or debit card",
+                    amount: {
+                        value: 9998,
+                        currency: "EUR",
+                    },
+                }
+            },
+            // Step 12 onSubmit(...)
+            onSubmit: async (state, component) => {
+                if (state.isValid) {
+                    const response = await sendPostRequest("/api/payments", state.data);
                     handleResponse(response, component);
                 }
-            };
+            },
+            // Step 12 onAdditionalDetails(...)
+            onAdditionalDetails: async (state, component) => {
+                const response = await sendPostRequest("/api/payments/details", state.data);
+                handleResponse(response, component);
+            }
+        };
 
-            // Start the AdyenCheckout and mount the element onto the `payment`-div.
-            let adyenCheckout = await new AdyenCheckout(configuration);
-            adyenCheckout.create(type).mount(document.getElementById("payment"));
-        } catch (error) {
-            console.error(error);
-            alert("Error occurred. Look at console for details.");
-        }
+        // Start the AdyenCheckout and mount the element onto the `payment`-div.
+        let adyenCheckout = await new AdyenCheckout(configuration);
+        adyenCheckout.create(type).mount(document.getElementById("payment"));
+    } catch (error) {
+        console.error(error);
+        alert("Error occurred. Look at console for details.");
     }
+}
 
-    // Step 12 - Handles responses, do a simple redirect based on the result.
-    function handleResponse(response, component) {
-        switch (response.resultCode) {
-            case "Authorised":
-                window.location.href = "/result/success";
-                break;
-            case "Pending":
-            case "Received":
-                window.location.href = "/result/pending";
-                break;
-            case "Refused":
-                window.location.href = "/result/failed";
-                break;
-            default:
-                window.location.href = "/result/error";
-                break;
-        }
+// Step 12 - Handles responses, do a simple redirect based on the result.
+function handleResponse(response, component) {
+    switch (response.resultCode) {
+        case "Authorised":
+            window.location.href = "/result/success";
+            break;
+        case "Pending":
+        case "Received":
+            window.location.href = "/result/pending";
+            break;
+        case "Refused":
+            window.location.href = "/result/failed";
+            break;
+        default:
+            window.location.href = "/result/error";
+            break;
     }
+}
 
-    // ...
-
+// ...
 ```
 
 </details>
@@ -555,5 +553,3 @@ public ResponseEntity<String> webhooks(@RequestBody String json) throws Exceptio
 ## Contacting us
 
 If you have any questions, feel free to contact us at devrel@adyen.com.
-
-* [Kwok He Chu](https://github.com/Kwok-he-Chu)
