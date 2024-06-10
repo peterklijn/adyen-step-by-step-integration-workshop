@@ -91,28 +91,18 @@ ADYEN_API_KEY=Aq42....xx
 ADYEN_CLIENT_KEY=test_yourclientkey
 ADYEN_MERCHANT_ACCOUNT=YourMerchantAccountName
 ```
-   You can now access your keys using `applicationConfiguration.getAdyenApiKey()`, `applicationConfiguration.getAdyenClientKey()` and `applicationConfiguration.getAdyenMerchantAccount()` respectively.
 
-
-5. [Skip this step] Install the [Java library](https://github.com/Adyen/adyen-java-api-library) by adding the following line to the `build.gradle` file, build the project to pull-in the Adyen Java API Library.
-For your convenience, we've already included this in the project.
-
-```
-	implementation 'com.adyen:adyen-java-api-library:25.1.0'
-```
-
-
-6. Install the latest [Adyen.Web Dropin/Components](https://docs.adyen.com/online-payments/release-notes/) by adding embed script(`.js`) and stylesheet(`.css`) to `/resources/templates/layout.html`.
-  - Including this allows you to access the AdyenCheckout instance in JavaScript. In this example, we use `Web Components/Drop-in v5.63.0`.
-
+You can now access your keys using `applicationConfiguration.getAdyenApiKey()`, `applicationConfiguration.getAdyenClientKey()` and `applicationConfiguration.getAdyenMerchantAccount()` respectively.
 
 **Additional context:**
 In `/com/adyen/workshop/configurations/`, you'll find a `DependencyInjectionConfiguration`. This is where we create our Adyen instances and **re-use** them using Spring's Constructor Dependency Injection (CDI) - A `@Bean` is an object that is instantiated, assembled, and managed by a Spring IoC container.
 For your convenience, we've added these, you just have to instantiate the `com.Adyen.Client` (using your `ADYEN_API_KEY` & environment: `TEST`), and `com.adyen.service.checkout.PaymentsApi` once.
 
+**Exercise:** Create your Adyen-`Client` (takes care of the HTTP(s) communication), which we'll use later on.
+We've created `PaymentsApi`-service (communicates with the Adyen endpoints) and `hmacValidator` instances already for you.
 
 <details>
-<summary>Show me how</summary>
+<summary>Show me the answer</summary>
 
 ```java
 
@@ -144,6 +134,21 @@ public class DependencyInjectionConfiguration {
 ```
 
 </details>
+
+
+5. [Skip this step] Install the [Java library](https://github.com/Adyen/adyen-java-api-library) by adding the following line to the `build.gradle` file, build the project to pull-in the Adyen Java API Library.
+For your convenience, we've already included this in the project.
+
+```
+	implementation 'com.adyen:adyen-java-api-library:25.1.0'
+```
+
+
+6. Install the latest [Adyen.Web Dropin/Components](https://docs.adyen.com/online-payments/release-notes/) by adding embed script(`.js`) and stylesheet(`.css`) to `/resources/templates/layout.html`.
+  - Including this allows you to access the AdyenCheckout instance in JavaScript. In this example, we use `Web Components/Drop-in v5.63.0`.
+
+
+
 
 7. Let's prepare our backend (`com/adyen/workshop/controllers`) to [retrieve a list of available payment methods](https://docs.adyen.com/online-payments/build-your-integration/advanced-flow/?platform=Web&integration=Drop-in&version=5.63.0&programming_language=java#web-advanced-flow-post-payment-methods-request). Go to `ApiController.java` and use the `paymentsApi` to make `/paymentMethods`-request to Adyen.
 ```java

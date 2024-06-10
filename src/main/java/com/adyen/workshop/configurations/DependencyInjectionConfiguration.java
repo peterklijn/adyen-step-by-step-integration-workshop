@@ -18,17 +18,20 @@ public class DependencyInjectionConfiguration {
 
     @Bean
     Client client() {
+        // Step 4
         var config = new Config();
-        config.setApiKey(applicationConfiguration.getAdyenApiKey());
-        config.setEnvironment(Environment.TEST);
         return new Client(config);
     }
 
     @Bean
     PaymentsApi paymentsApi(){
+        // Step 4
         return new PaymentsApi(client());
     }
 
     @Bean
-    HMACValidator hmacValidator() { return new HMACValidator(); }
+    HMACValidator hmacValidator() {
+        // Step 4
+        return new HMACValidator();
+    }
 }
