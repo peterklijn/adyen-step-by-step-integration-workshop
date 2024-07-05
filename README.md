@@ -91,9 +91,9 @@ Step 0. Build the project and run it to see if it works. If you can visit `http:
    - If you're using gitpod/codespaces, you can export your variables as follows in your terminal:
    - If you've used gitpod before, the program will inject previously used environment variables as configured in [https://gitpod.io/variables](https://gitpod.io/variables).
 ```
-ADYEN_API_KEY="Aq42....xx"
-ADYEN_CLIENT_KEY="test_yourclientkey"
-ADYEN_MERCHANT_ACCOUNT="YourMerchantAccountName"
+export ADYEN_API_KEY='Aq42....xx'
+export ADYEN_CLIENT_KEY='test_yourclientkey'
+export ADYEN_MERCHANT_ACCOUNT='YourMerchantAccountName'
 ```
 
 You can now access your keys in your application anywhere:
@@ -257,20 +257,20 @@ public ResponseEntity<PaymentResponse> payments(@RequestHeader String host, @Req
             .currency("EUR")
             .value(9998L);
     paymentRequest.setAmount(amount);
-    paymentRequest.setMerchantAccount(...);
-    paymentRequest.setChannel(...);
+    paymentRequest.setMerchantAccount(applicationConfiguration.getAdyenMerchantAccount());
+    paymentRequest.setChannel(PaymentRequest.ChannelEnum.WEB);
 
-    // Tip: You can get the paymentMethod from the frontend e.g. see: body.getPaymentMethod()
-    paymentRequest.setPaymentMethod(...);
+    paymentRequest.setPaymentMethod(body.getPaymentMethod());
 
     var orderRef = UUID.randomUUID().toString();
     paymentRequest.setReference(orderRef);
-    // Once done with the payment, where shall we redirect you?
+    // The returnUrl is basically: Once done with the payment, where shall we redirect you?
     paymentRequest.setReturnUrl(request.getScheme() + "://" + host + "/api/handleShopperRedirect?orderRef=" + orderRef); // Example: Turns into http://localhost:8080/api/handleShopperRedirect?orderRef=354fa90e-0858-4d2f-92b9-717cb8e18173
 
 
     log.info("PaymentsRequest {}", paymentRequest);
     var response = paymentsApi.payments(paymentRequest);
+    log.info("PaymentsResponse {}", response);
     return ResponseEntity.ok().body(response);
 }
 ```
@@ -305,6 +305,7 @@ We've added a helper function `handleResponse(...)` to do a simple redirect.
 <details>
 <summary>Show me the answer</summary>
 
+**Note:** We've added the `onSubmit()` and `onAdditionalDetails()` handlers here.
 ```js
 async function startCheckout() {
     try {
@@ -442,6 +443,8 @@ public RedirectView redirect(@RequestParam(required = false) String payload, @Re
 
 **Step 14.** We'll have to update our frontend accordingly if there's an action to handle, go to `adyenWebImplementation.js` and modify the `handleResponse(...)`-function:
 
+**Note:** We've added the `response.action` and `component.handleAction(response.action)` functionality here.
+
 ```js
 // Handles responses sent from your server to the client.
 function handleResponse(response, component) {
@@ -469,30 +472,9 @@ function handleResponse(response, component) {
 ```
 
 
-**Step 15.** Handle the response from the API. There are multiple cases, for the workshop, we kept it to the minimal cases needed. See [result codes on docs](https://docs.adyen.com/development-resources/overview-response-handling/#result-codes).
+**Step 15.** Let's test this flow by making a payment using a regular flow and a 3DS flow. You can find more test card numbers on [Adyen docs](https://docs.adyen.com/development-resources/testing/test-card-numbers/).
 
-```js
-switch (response.resultCode) {
-        case "Authorised":
-            window.location.href = "/result/success";
-            break;
-        case "Pending":
-        case "Received":
-            window.location.href = "/result/pending";
-            break;
-        case "Refused":
-            window.location.href = "/result/failed";
-            break;
-        default:
-            window.location.href = "/result/error";
-            break;
-    }
-```
-
-
-**Step 16.** Let's test this flow by making a payment using a regular flow and a 3DS flow.
-
-**Note:** For Cards, use the following Visa Test Card number, to trigger a 3DS2 flow. You can also download the official [Adyen Test Card Extension](https://chromewebstore.google.com/detail/adyen-test-cards/icllkfleeahmemjgoibajcmeoehkeoag) to prefill your card numbers, or visit the Adyen [docs](https://docs.adyen.com/development-resources/testing/test-card-numbers/).
+**Note:** For Cards, use the following Visa Test Card number, to trigger a 3DS2 flow. You can also download the official [Adyen Test Card Extension](https://chromewebstore.google.com/detail/adyen-test-cards/icllkfleeahmemjgoibajcmeoehkeoag) to prefill your card numbers.
 
 ```
 4871 0499 9999 9910
@@ -501,11 +483,13 @@ switch (response.resultCode) {
 ```
 
 
-**Step 17.** Receive webhooks by enabling webhooks in the Customer Area and creating your `/webhooks`-endpoint in `Controllers/WebhookController.java`.
+**Step 16.** Receive webhooks by enabling webhooks in the Customer Area and creating your `/webhooks`-endpoint in `Controllers/WebhookController.java`.
    - [Read the docs: Enable and verify HMAC signatures](https://docs.adyen.com/development-resources/webhooks/verify-hmac-signatures/)
-   - Create a standard webhook in your Customer Area.
+   - Create a standard webhook in your Customer Area. Example URL -> `https://caafaf.gitpod.io/webhooks`
    - Don't forget to inject your `ADYEN_HMAC_KEY` in your `ApplicationConfiguration.java`, which you can then use to verify the HMAC signature.
    - Create a new `WebhookController.java` in `/java/com/adyen/workshop/controllers/WebhookController.java`
+
+We highly recommend testing out whether your
 
 <details>
   <summary>Show me the answer</summary>
