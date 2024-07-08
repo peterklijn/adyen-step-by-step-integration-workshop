@@ -25,13 +25,11 @@ public class DependencyInjectionConfiguration {
 
     @Bean
     PaymentsApi paymentsApi(){
-        // Step 4
         return new PaymentsApi(client());
     }
 
     @Bean
     HMACValidator hmacValidator() {
-        // Step 4
         return new HMACValidator();
     }
 }
