@@ -70,8 +70,7 @@ The project structure follows a Model-View-Controller (MVC) structure.
   * `./gradlew bootRun` will start the server on port 8080.
   * To run the project from your IDE, go to `src/main/java/com/adyen/workshop/MainApplication.java` -> Right-click and click `Debug` or `Run`.
 
-
-## Workshop: Accepting Online payments using the Advanced flow
+## Workshop: Accepting Online Payments using the Advanced flow
 Learn how to integrate with Adyen using the `/paymentMethods`, `/payments` and `/payments/details` endpoints.
 
 
@@ -103,6 +102,15 @@ In this workshop, you'll learn how to:
 ### Start - Step-by-Step Guide:
 
 **Step 0.** Build the project using `./gradlew bootRun` and see if it works. If you can visit `http://localhost:8080/hello-world`, `https://8080-adyenexampl-adyenstepby-xxxxxx21.ws-eu114.gitpod.io/hello-world` (Gitpod) or `https://xxxx.github.dev/hello-world` (codespaces), this means it works!
+
+
+If you see the following message in your console logs, it means that you've successfully ran the application.
+
+```
+----------------------------------------------------------
+	Application is running on http://localhost:8080
+----------------------------------------------------------
+```
 
 
 **Step 1.** [Create your Adyen Merchant Account](https://docs.adyen.com/account/manage-account-structure/#request-merchant-account) or use an existing Adyen Merchant Account associated with your account (ending with -`ECOM`). 
