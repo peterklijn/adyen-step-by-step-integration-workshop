@@ -105,10 +105,10 @@ In this workshop, you'll learn how to:
 **Step 0.** Build the project using `./gradlew bootRun` and see if it works. If you can visit `http://localhost:8080/hello-world`, `https://8080-adyenexampl-adyenstepby-xxxxxx21.ws-eu114.gitpod.io/hello-world` (Gitpod) or `https://xxxx.github.dev/hello-world` (codespaces), this means it works!
 
 
-**Step 1.** [Get your Adyen Merchant Account](https://docs.adyen.com/account/manage-account-structure/#request-merchant-account) or use an existing Merchant Account associated with your account (ending with -`ECOM`).
+**Step 1.** [Create your Adyen Merchant Account](https://docs.adyen.com/account/manage-account-structure/#request-merchant-account) or use an existing Adyen Merchant Account associated with your account (ending with -`ECOM`). 
 
 
-**Step 2.** [Get your Adyen API Key](https://docs.adyen.com/development-resources/api-credentials/#generate-api-key). Ensure you've created the API Key on the Merchant Account level (e.g., you've selected your MerchantAccount and created credentials in the API Credentials page in the Customer Area).
+**Step 2.** [Create your Adyen API Key](https://docs.adyen.com/development-resources/api-credentials/#generate-api-key). Ensure you've created the API Key on the Merchant Account level (e.g., you've selected your MerchantAccount and created credentials in the API Credentials page in the Customer Area).
    - Pro-tip #1: Make sure you copy your key correctly.
    - Pro-tip #2: Make 101% sure you copy your key correctly! :)
 
@@ -117,7 +117,7 @@ In this workshop, you'll learn how to:
    - Do **not** forget to add the correct URL to my allowed origins (e.g. `http://localhost:8080`, `https://*.gitpod.io`, or `https://*.github.dev`). This allows Adyen.Web Dropin/Components to load on your page. The `*`-symbol indicates to accept any subdomain.
 
 
-**Step 4.** Add your keys to `ApplicationConfiguration.java` in `/main/java/com/adyen/workshop/configurations`:
+**Step 4.** Add the following values from step 1-3 to `ApplicationConfiguration.java` in `/main/java/com/adyen/workshop/configurations`:
    - Best practice: export the vars as follows so that the Spring Boot framework can automatically inject your variables on startup.
    - If you're using gitpod/codespaces, you can export your variables as follows in your terminal:
    - If you've used gitpod before, the program will inject previously used environment variables as configured in [https://gitpod.io/variables](https://gitpod.io/variables).
