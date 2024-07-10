@@ -4,6 +4,28 @@ const type = document.getElementById("type").innerHTML;
 // Starts the (Adyen.Web) AdyenCheckout with your specified configuration by calling the `/paymentMethods` endpoint.
 async function startCheckout() {
     // Step 8
+    let paymentMethodsResponse = await sendPostRequest("/api/paymentMethods");
+
+    const configuration = {
+        paymentMethodsResponse: paymentMethodsResponse,
+        clientKey,
+        locale: "en_US",
+        environment: "test",
+        showPayButton: true,
+        paymentMethodsConfiguration: {
+            card: {
+                hasHolderName: true,
+                holderNameRequired: true,
+                name: "Credit or debit card",
+                amount: {
+                    value: 9998,
+                    currency: "EUR",
+                },
+            }
+        },
+    };
+    let adyenCheckout = await new AdyenCheckout(configuration);
+    adyenCheckout.create(type).mount(document.getElementById("payment"));
 }
 
 // Step 12 - Handles responses, do a simple redirect based on the result.
