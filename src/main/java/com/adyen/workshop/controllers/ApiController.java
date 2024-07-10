@@ -53,8 +53,23 @@ public class ApiController {
 
     @PostMapping("/api/payments")
     public ResponseEntity<PaymentResponse> payments(@RequestHeader String host, @RequestBody PaymentRequest body, HttpServletRequest request) throws IOException, ApiException {
-        // Step 9
-        return null;
+        var orderRef = UUID.randomUUID().toString();
+
+        var paymentRequest = new PaymentRequest()
+            .merchantAccount(applicationConfiguration.getAdyenMerchantAccount())
+            .channel(PaymentRequest.ChannelEnum.WEB)
+            .amount(new Amount().currency("EUR").value(9998L))
+            .reference(orderRef)
+            .paymentMethod(body.getPaymentMethod())
+            .returnUrl(request.getScheme() + "://" + host + "/api/handleShopperRedirect?orderRef=" + orderRef);
+        
+        log.info("payment request {}", paymentRequest);
+        
+        var requestOptions = new RequestOptions().idempotencyKey(UUID.randomUUID().toString());
+        var paymentResponse = paymentsApi.payments(paymentRequest, requestOptions);
+        log.info("payment response {}", paymentResponse);
+
+        return ResponseEntity.ok(paymentResponse);
     }
 
     @PostMapping("/api/payments/details")
