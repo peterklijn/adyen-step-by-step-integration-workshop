@@ -27,6 +27,8 @@ public class ApiController {
     private final ApplicationConfiguration applicationConfiguration;
     private final PaymentsApi paymentsApi;
 
+    private final String origin = "https://orange-space-waddle-g57v47wr742r74-8080.app.github.dev";
+
     public ApiController(ApplicationConfiguration applicationConfiguration, PaymentsApi paymentsApi) {
         this.applicationConfiguration = applicationConfiguration;
         this.paymentsApi = paymentsApi;
@@ -55,13 +57,32 @@ public class ApiController {
     public ResponseEntity<PaymentResponse> payments(@RequestHeader String host, @RequestBody PaymentRequest body, HttpServletRequest request) throws IOException, ApiException {
         var orderRef = UUID.randomUUID().toString();
 
+        var billingAddress = new BillingAddress()
+            .street("Rokin")
+            .houseNumberOrName("49")
+            .postalCode("1012KK")
+            .city("Amsterdam")
+            .country("NL");
+        var authenticationData = new AuthenticationData()
+            .attemptAuthentication(AuthenticationData.AttemptAuthenticationEnum.ALWAYS);
+
         var paymentRequest = new PaymentRequest()
             .merchantAccount(applicationConfiguration.getAdyenMerchantAccount())
             .channel(PaymentRequest.ChannelEnum.WEB)
             .amount(new Amount().currency("EUR").value(9998L))
             .reference(orderRef)
             .paymentMethod(body.getPaymentMethod())
-            .returnUrl(request.getScheme() + "://" + host + "/api/handleShopperRedirect?orderRef=" + orderRef);
+            // .returnUrl(request.getScheme() + "://" + host + "/api/handleShopperRedirect?orderRef=" + orderRef)
+            .returnUrl(origin + "/api/handleShopperRedirect?orderRef=" + orderRef)
+            // Step 12
+            .authenticationData(authenticationData)
+            .browserInfo(body.getBrowserInfo())
+            .billingAddress(billingAddress)
+            // .origin(request.getScheme() + "://" + host)
+            .origin(origin)
+            .shopperIP(body.getShopperIP())
+            .shopperInteraction(PaymentRequest.ShopperInteractionEnum.ECOMMERCE)
+            .shopperEmail("s.hopper@example.com");
         
         log.info("payment request {}", paymentRequest);
         
@@ -74,15 +95,52 @@ public class ApiController {
 
     @PostMapping("/api/payments/details")
     public ResponseEntity<PaymentDetailsResponse> paymentsDetails(@RequestBody PaymentDetailsRequest detailsRequest) throws IOException, ApiException {
-        // Step 12
-        var pay = new PaymentRequest();
-        pay.setShopperInteraction(PaymentRequest.ShopperInteractionEnum.ECOMMERCE);
-        return null;
+        // Step 13
+        log.info("PaymentDetailsRequest {}", detailsRequest);
+        var response = paymentsApi.paymentsDetails(detailsRequest);
+        log.info("PaymentDetailsResponse {}", response);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/api/handleShopperRedirect")
     public RedirectView redirect(@RequestParam(required = false) String payload, @RequestParam(required = false) String redirectResult) throws IOException, ApiException {
-        // Step 13
-        return null;
+        // Step 14
+        var paymentDetailsRequest = new PaymentDetailsRequest();
+        var paymentCompletionDetails = new PaymentCompletionDetails();
+
+        if (redirectResult != null && !redirectResult.isEmpty()) {
+            // For redirect, you are redirected to an Adyen domain to complete the 3DS2 challenge
+            // After completing the 3DS2 challenge, you get the redirect result from Adyen in the returnUrl
+            // We then pass on the redirectResult
+            paymentCompletionDetails.redirectResult(redirectResult);
+        } else if (payload != null && !payload.isEmpty()) {
+            paymentCompletionDetails.payload(payload);
+        }
+
+        paymentDetailsRequest.setDetails(paymentCompletionDetails);
+
+        var paymentsDetailsResponse = paymentsApi.paymentsDetails(paymentDetailsRequest);
+        log.info("PaymentsDetailsResponse {}", paymentsDetailsResponse);
+
+
+        // Handle response and redirect user accordingly
+        var redirectURL = "/result/";
+        switch (paymentsDetailsResponse.getResultCode()) {
+            case AUTHORISED:
+                redirectURL += "success";
+                break;
+            case PENDING:
+            case RECEIVED:
+                redirectURL += "pending";
+                break;
+            case REFUSED:
+                redirectURL += "failed";
+                break;
+            default:
+                redirectURL += "error";
+                break;
+        }
+        log.info("redirectURL: {}", redirectURL);
+        return new RedirectView(origin + redirectURL + "?reason=" + paymentsDetailsResponse.getResultCode());
     }
 }

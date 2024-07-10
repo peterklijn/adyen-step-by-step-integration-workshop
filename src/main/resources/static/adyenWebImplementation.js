@@ -32,6 +32,12 @@ async function startCheckout() {
                     handleResponse(response, component);
                 }
             },
+
+            // Step 13
+            onAdditionalDetails: async (state, component) => {
+                const response = await sendPostRequest("/api/payments/details", state.data);
+                handleResponse(response, component);
+            },
         };
         let adyenCheckout = await new AdyenCheckout(configuration);
         adyenCheckout.create(type).mount(document.getElementById("payment"));
@@ -42,20 +48,24 @@ async function startCheckout() {
 
 // Step 12 - Handles responses, do a simple redirect based on the result.
 function handleResponse(response, component) {
-    switch (response.resultCode) {
-        case "Authorised":
-            window.location.href = "/result/success";
-            break;
-        case "Pending":
-        case "Received":
-            window.location.href = "/result/pending";
-            break;
-        case "Refused":
-            window.location.href = "/result/failed";
-            break;
-        default:
-            window.location.href = "/result/error";
-            break;
+    if (response.action) { // Step 13
+        component.handleAction(response.action);
+    } else {
+        switch (response.resultCode) {
+            case "Authorised":
+                window.location.href = "/result/success";
+                break;
+            case "Pending":
+            case "Received":
+                window.location.href = "/result/pending";
+                break;
+            case "Refused":
+                window.location.href = "/result/failed";
+                break;
+            default:
+                window.location.href = "/result/error";
+                break;
+        }
     }
 }
 
